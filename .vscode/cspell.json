@@ -1,0 +1,7 @@
+{
+  // …
+  "import": ["@cspell/dict-r/cspell-ext.json"],
+  // …
+  "enableFiletypes": ["namespace.r", "rmarkdown"],
+  "words": ["logr", "mvoted"]
+}

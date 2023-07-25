@@ -53,7 +53,7 @@ def EdgetoAdj_No_loop(E, N):
     Adj = sp.coo_matrix((np.ones_like(E[:,0][E[:,0]!=E[:,1]]),\
                          (E[:,0][E[:,0]!=E[:,1]], E[:,1][E[:,0]!=E[:,1]])), \
                         shape = (N, N)).tocsr()
-    
+
     return Adj
 
 def Count_Types(oblist, V, maxTypes = 0):
@@ -69,7 +69,7 @@ def Count_Types(oblist, V, maxTypes = 0):
     maxTypes : int; (OPTIONAL)
         Number of unique vertex types. If not specified, RaCInG tries to
         estimate it from the data provided.
-        
+
         KNOWN ISSUE: If the input consits e.g. of 9 cell-types, but the ninth
         cell type is never generated, then the automatic function will think
         there are 8 cell-types. This might cause issues later in the pipeline.
@@ -96,7 +96,7 @@ def createSlurm(cancer, weight, feature, N, itNo, noPat, av, norm):
         filename = cancer + feature + "norm.sh"
     else:
         filename = cancer + feature + ".sh"
-    
+
     with open(filename, "x", newline = '\n') as f:
         f.writelines(["#!/usr/bin/bash\n", "#SBATCH --nodes=1\n", "#SBATCH --ntasks=1\n","#SBATCH --partition=mcs.default.q\n"])
         if feature == "D":
@@ -135,17 +135,17 @@ if __name__ == "__main__":
     print(EdgetoAdj(E, N).todense())
     print("Without loops:")
     print(EdgetoAdj_No_loop(E, N).todense())
-    
+
     #Test object count function
     oblist = np.array([[0, 3, 8, 1], [1, 4, 2,2], [1, 3, 2, 1], [0, 1, 2, 3]])
     V = np.array([0, 0, 0, 0, 1, 1, 1, 1, 2])
     print("Object count no issue:")
     print(Count_Types(oblist, V))
-    
+
     #Showing the issue in Count_Types()
     oblist = np.array([[0, 3, 8], [1, 4, 2], [1, 3, 2], [0, 1, 2]])
     V = np.array([0, 0, 0, 0, 2, 2, 2, 2, 0]) #Assume there are three cell types (type 2 was never generated)
     print("Object count issue with automatic type count:")
     print(Count_Types(oblist, V))
     print("Object count issue with corrected type count:")
-    print(Count_Types(oblist, V, 3))   
+    print(Count_Types(oblist, V, 3))

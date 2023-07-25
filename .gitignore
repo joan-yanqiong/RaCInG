@@ -1,0 +1,6 @@
+/Data
+/omnipathr-log
+/output
+__pycache__
+.DS_Store
+DEV_*

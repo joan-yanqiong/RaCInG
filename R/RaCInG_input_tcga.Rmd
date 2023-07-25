@@ -32,7 +32,7 @@ library('corrplot')
 knitr::opts_chunk$set(fig.height = 9, fig.width = 9)
 
 # TCGA cancer types
-cancer_types <- c("BLCA", "CRC", "NSCLC", "KIRC", "SKCM", "STAD") 
+cancer_types <- c("BLCA", "CRC", "NSCLC", "KIRC", "SKCM", "STAD")
 
 path_to_TPMfolder <- "../../../../Mechanistic_signatures_project/data/TCGA_tpm_files/"
 path_to_CCCtable <- "../Data/CCC_PKN/expressed_ccc_table.csv"
@@ -58,23 +58,23 @@ LR_pairs <- unique(paste0(ccc_table_filtered$Ligand, "_", ccc_table_filtered$Rec
 ```{r}
 
 for (cancer.type in cancer_types){
-  
+
   # read RNA-seq data
   if (cancer.type == "NSCLC"){
- 
+
     RNA_tpm <- do.call(cbind, lapply(c("LUAD", "LUSC"), function(X){
       RNA_tpm <- read.table(file = paste0(path_to_TPMfolder, "/TCGA_tpm_", X, ".txt"), check.names = FALSE)
     }))
-    
+
   }else{
-    
+
     RNA_tpm <- read.table(paste0(path_to_TPMfolder, "/TCGA_tpm_", cancer.type, ".txt"), check.names = FALSE)
-    
+
   }
-  
+
   # log2 transform
   log2_RNA_tpm <- as.data.frame(log2(RNA_tpm + 1))
-  
+
   ## using limiting factor strategy: min(L,R) --> compute L-R pairs weights
   LR_pairs_computed <- do.call(rbind, lapply(
     seq_len(length(LR_pairs)),
@@ -94,7 +94,7 @@ for (cancer.type in cancer_types){
   ))
   colnames(LR_pairs_computed) <- gsub(".", "-", colnames(LR_pairs_computed), fixed = TRUE)
   LR_pairs_computed <- t(LR_pairs_computed)
-  
+
   write.csv(LR_pairs_computed, file = file.path(path_to_output, cancer.type, "LRpair_weights_min.csv"))
 
 }
@@ -110,25 +110,25 @@ source("./utils/run_TMEmod_deconvolution.R")
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
 DCres.cor <- lapply(cancer_types, function(cancer.type){
-  
+
   # Read RNA-seq data
   if (cancer.type == "NSCLC"){
- 
+
     RNA_tpm <- do.call(cbind, lapply(c("LUAD", "LUSC"), function(X){
       RNA_tpm <- read.table(file = paste0(path_to_TPMfolder, "/TCGA_tpm_", X, ".txt"), check.names = FALSE)
     }))
-    
+
   }else{
-    
+
     RNA_tpm <- read.table(paste0(path_to_TPMfolder, "/TCGA_tpm_", cancer.type, ".txt"), check.names = FALSE)
-    
+
   }
-  
+
   # Compute cell fractions
   if (cancer.type == "NSCLC"){
     cellfrac_LUAD <- run_TMEmod_deconvolution(RNA_tpm$LUAD, cancer_type = "LUAD")
     cellfrac_LUSC <- run_TMEmod_deconvolution(RNA_tpm$LUSC, cancer_type = "LUSC")
-    
+
     cellfrac <- lapply(names(cellfrac_LUAD), function(X){
       cellfrac <- cbind(cellfrac_LUAD[[X]], cellfrac_LUSC[[X]])
     })
@@ -138,14 +138,14 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
   }else{
     cellfrac <- run_TMEmod_deconvolution(RNA_tpm, cancer_type = cancer.type)
   }
-  
+
   cellfrac.quanTIseq <- cellfrac$quanTIseq
   cellfrac.TIMER <- cellfrac$TIMER
   cellfrac.consensusTME <- cellfrac$consensusTME
   cellfrac.xCell <-cellfrac$xCell
   cellfrac.mcpcounter <- cellfrac$mcpcounter
   cellfrac.EPIC <- cellfrac$EPIC
-  
+
   ## Load deconvolution results
   DCres <- data.frame(CD8_qTs = cellfrac.quanTIseq["T.cells.CD8",],
                       NK_qTs = cellfrac.quanTIseq["NK.cells",],
@@ -188,35 +188,35 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
                       CAF_EPI = cellfrac.EPIC["CAFs",],
                       Tumor_EPI = cellfrac.EPIC["otherCells",],
                       Endo_EPI = cellfrac.EPIC["Endothelial",])
-  
+
   DCres <- DCres[, order(colnames(DCres))]
   DCres.cor <- round(cor(DCres),2)
-  
+
   # Save results
-  celltypes <- c("DC", "CD8", "Treg", 
+  celltypes <- c("DC", "CD8", "Treg",
                  "B", "M1", "M2",
                  "Endo", "CAF", "NK", "Tumor")
-  CellFrac <- as.data.frame(matrix(NA, 
+  CellFrac <- as.data.frame(matrix(NA,
                                    ncol = length(celltypes),
                                    nrow = nrow(DCres)))
   rownames(CellFrac) <- rownames(DCres)
   colnames(CellFrac) <- celltypes
-  
+
   ## CD8 T cells
   CD8_cor <-DCres.cor["CD8_qTs", -grep("_qTs$", colnames(DCres.cor))]
-  (CD8_cor <- sort(CD8_cor[grep("^CD8_", names(CD8_cor))])) 
+  (CD8_cor <- sort(CD8_cor[grep("^CD8_", names(CD8_cor))]))
   # --> CD8_qTs has good agreement with all methods
   # --> Take CD8_qTs
   #plot(DCres$CD8_qTs, DCres$CD8_EPI); abline(0,1) # offset
   CellFrac$CD8 <- DCres$CD8_qTs
-  
+
   ## CAFs
   CAF_cor <- DCres.cor["CAF_EPI", -grep("_EPI$", colnames(DCres.cor))]
   (CAF_cor <- sort(CAF_cor[grep("^CAF_", names(CAF_cor))]) )
   # --> CAF_EPI has good agreement with all methods
   # --> Take CAF_EPI
   CellFrac$CAF <- DCres$CAF_EPI
-  
+
   ## B cells
   B_cor <- DCres.cor["B_qTs", -grep("_qTs$", colnames(DCres.cor))]
   (B_cor <- sort(B_cor[grep("^B_", names(B_cor))]))
@@ -224,7 +224,7 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
   # --> Take B_qTs
   #plot(DCres$B_qTs, DCres$B_EPI); abline(0,1)
   CellFrac$B <- DCres$B_qTs
-  
+
   ## Natural Killer cells
   NK_cor <- DCres.cor["NK_qTs", -grep("_qTs$", colnames(DCres.cor))]
   (NK_cor <- sort(NK_cor[grep("^NK_", names(NK_cor))]))
@@ -235,21 +235,21 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
   # --> Take NK_EPI and set to 0 samples that are 0 for xCell
   CellFrac$NK <- DCres$NK_EPI
   CellFrac$NK[DCres$xCell == 0] <- 0
-  
+
   ## M1 macrophages
   M1_cor <- DCres.cor["M1_qTs", -grep("_qTs$", colnames(DCres.cor))]
   (M1_cor <- sort(M1_cor[grep("^M1_", names(M1_cor))]))
   # --> M1_qTs has a mid agreement with M1_con and M1_xCl
   # --> Take M1_qTs
   CellFrac$M1 <- DCres$M1_qTs
-  
+
   ## M2 macrophages
   M2_cor <- DCres.cor["M2_qTs", -grep("_qTs$", colnames(DCres.cor))]
   (M2_cor <- sort(M2_cor[grep("^M2_", names(M2_cor))]))
   # --> M2_qTs has a mid agreement with M2_con and M2_xCl
   # --> Take M2_qTs
   CellFrac$M2 <- DCres$M2_qTs
-  
+
   ## Dendritic cells
   DC_cor <- DCres.cor["DC_qTs", -grep("_qTs$", colnames(DCres.cor))]
   (DC_cor <- sort(DC_cor[grep("^DC_", names(DC_cor))]))
@@ -271,10 +271,10 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
                        range01(DCres$DC_TIM)), 1, median)
   DCrange <- DCres$DC_qTs
   DCrange[which(DCres$DC_xCl == 0)] <- 0
-  DCrange <- range(DCrange)  
+  DCrange <- range(DCrange)
   CellFrac$DC <- DCcon * (DCrange[2] - DCrange[1]) + DCrange[1]
   #plot(DCres$DC_MCP, CellFrac$DC)
-  
+
   ## Regulatory T cells
   Treg_cor <- DCres.cor["Treg_qTs", -grep("_qTs$", colnames(DCres.cor))]
   (Treg_cor <- sort(Treg_cor[grep("^Treg_", names(Treg_cor))]))
@@ -286,14 +286,14 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
   #plot(DCres$Treg_qTs, DCres$Treg_xCell)
   #plot(DCres$Treg_qTs, DCres$Treg_con)
   #plot(DCres$Treg_qTs, CellFrac$Treg)
-  
+
   ## Endothelial cells
   Endo_cor <- DCres.cor["Endo_EPI", -grep("_EPI$", colnames(DCres.cor))]
   (Endo_cor <- sort(Endo_cor[grep("^Endo_", names(Endo_cor))]))
   # --> Endo_EPI has high agreement with Endo_con and Endo_xCl
   # --> Take Endo_EPI
   CellFrac$Endo <- DCres$Endo_EPI
-  
+
   ## Tumor cells
   Tumor_cor <- DCres.cor["Tumor_qTs", -grep("_qTs$", colnames(DCres.cor))]
   (Tumor_cor <- sort(Tumor_cor[grep("^Tumor_", names(Tumor_cor))]))
@@ -301,18 +301,18 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
   # --> Tumor_qTs and Tumor_EPI have high agreement
   # --> Take EPIC (no Endo, no CAFs)
   CellFrac$Tumor <- DCres$Tumor_EPI
-  
+
   ## Normalize to sum to 100%
   CellFrac.norm <- CellFrac
   CellFrac.norm <- CellFrac.norm/apply(CellFrac.norm, 1, sum)
-  
+
   ## Check correlation of the final score
   DCres.all <- cbind(DCres, CellFrac.norm)
   DCres.all <- DCres.all[, order(colnames(DCres.all))]
   DCres.cor <- cor(DCres.all)
   ucells <- unique(gsub("_.*$", "", rownames(DCres.cor)))
   # for (cell in ucells) {
-  #   
+  #
   #   i <- which(gsub("_.*$", "", rownames(DCres.cor)) == cell )
   #   if (length(i) == 1) next
   #   cat("\n")
@@ -320,9 +320,9 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
   #   res <- res[-grep("_", rownames(res)),]
   #   res <- sort(res[grep("_", names(res))])
   #   print(res)
-  #   
+  #
   # }
-  
+
   ## Plot correlation
   # pdf(paste0("./input_data_model1/tmp/", cancer.type, "_TMEmod_cell_fractions_corr.pdf"))
   # corrplot(DCres.cor,
@@ -331,16 +331,16 @@ DCres.cor <- lapply(cancer_types, function(cancer.type){
   # #order = "hclust",
   # #hclust.method = "ward.D2"
   # dev.off()
-  
+
   # Visualize the distributions of the cell type fractions
   # boxplot(CellFrac.norm, las = 2)
-  
+
 
   # to .csv file
   write.csv(CellFrac.norm,
-            file= file.path(path_to_output, cancer.type, "TMEmod_cell_fractions.csv"), 
+            file= file.path(path_to_output, cancer.type, "TMEmod_cell_fractions.csv"),
             row.names = TRUE)
-  
+
   return(DCres.cor)
 })
 
@@ -379,9 +379,9 @@ lapply(cancer_types, function(XX){
   DataTasks_z <- easier:::calc_z_score(DataTasks)
   corrplot(cor(DataTasks_z))
   immuneresponse <- data.frame(IR=apply(DataTasks_z, 1, median))
-  
+
   write.csv(immuneresponse,
-            file= file.path(path_to_output, cancer.type, "immuneresponse_score.csv"), 
+            file= file.path(path_to_output, cancer.type, "immuneresponse_score.csv"),
             row.names = TRUE)
 })
 

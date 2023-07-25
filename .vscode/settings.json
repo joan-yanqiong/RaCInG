@@ -1,0 +1,25 @@
+{
+    // "r.interpreterPath": "/usr/local/bin/r",
+    "r.linting.enable": true,
+    "r.linting.lineLength": true,
+    "r.editor.bracesOnNewLine": true,
+    "cSpell.ignoreRegExpList": [
+        "*\\\\:\\\\:"
+    ],
+    "cSpell.patterns": [
+        "*\\:\\:",
+    "*\\:\\:\\:"
+    ],
+    "python.defaultInterpreterPath": "/Users/joankant/miniforge-pypy3/envs/racing/bin/python",
+    "python.terminal.activateEnvInCurrentTerminal": false,
+    "python.terminal.activateEnvironment": true,
+    "r.bracketedPaste": true,
+    "r.rterm.mac": "/opt/homebrew/Caskroom/miniforge/base/envs/x86/bin/radian",
+    "r.terminalPath": "/usr/local/bin/r",
+    "r.rpath.mac": "/usr/local/bin/r",
+    "r.rterm.option": [
+        "--no-save",
+        "--no-restore",
+        "--r-binary=/usr/local/bin/R"
+    ],
+}

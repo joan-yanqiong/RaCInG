@@ -9,6 +9,7 @@ from RaCInG_input_generation import generateInput as gi
 from RaCInG_input_generation import get_patient_names as pn
 import pandas as pd
 
+
 def Triangle_Prop_Read(filename):
     """
     Reads the raw data (about triangles) from .txt files.
@@ -41,43 +42,46 @@ def Triangle_Prop_Read(filename):
     av : float;
         Average degree used for each graph.
     """
-    
+
     with open(filename) as f:
         reader = csv.reader(f)
-        triangle_type = next(reader) #"NA" if the line is missing
+        triangle_type = next(reader)  # "NA" if the line is missing
         cancer_type, weight_type, NoPat, N, itNo, av = next(reader)
-        
+
         triangle_data_a = np.zeros((9, 9, 9, int(NoPat)))
         triangle_data_s = np.zeros((9, 9, 9, int(NoPat)))
         triangle_raw_count = np.zeros((int(NoPat), 2))
-        
+
         p = next(reader)
-        
+
         while p:
             p = p[0]
             next(reader)
             _, a_raw, s_raw = next(reader)
-            
+
             triangle_raw_count[int(p), 0] = float(a_raw)
             triangle_raw_count[int(p), 1] = float(s_raw)
-            
+
             next(reader)
             for _ in range(9):
                 for _ in range(9):
                     for _ in range(9):
                         i, j, k, a = next(reader)
-                        triangle_data_a[int(i), int(j), int(k), int(p)] = float(a)
-                        
+                        triangle_data_a[int(i), int(
+                            j), int(k), int(p)] = float(a)
+
             next(reader)
             for _ in range(9):
                 for _ in range(9):
                     for _ in range(9):
                         i, j, k, a = next(reader)
-                        triangle_data_s[int(i), int(j), int(k), int(p)] = float(a)
-                        
+                        triangle_data_s[int(i), int(
+                            j), int(k), int(p)] = float(a)
+
             p = next(reader)
-    
+
     return triangle_type[0], triangle_data_a, triangle_data_s, triangle_raw_count, weight_type, cancer_type, int(N), int(itNo), float(av)
+
 
 def Direct_Comm_Limit_Read(filename):
     """
@@ -100,30 +104,31 @@ def Direct_Comm_Limit_Read(filename):
         3D array where each matrix along the second axis is the direct communication
         between cell types in one patient.
     """
-    
+
     with open(filename) as f:
         reader = csv.reader(f)
         comm_type = next(reader)
         weight, cancer, NoPat = next(reader)
-        
-        direct_comm = np.zeros((9,9, int(NoPat)))
-        
+
+        direct_comm = np.zeros((9, 9, int(NoPat)))
+
         p = next(reader)
-        
+
         while p:
             pat = p[0]
             next(reader)
-            
+
             for _ in range(9):
                 for _ in range(9):
                     i, j, a = next(reader)
                     direct_comm[int(i), int(j), int(pat)] = float(a)
-                    
+
             p = next(reader)
-        
+
     return weight, cancer, int(NoPat), direct_comm
 
-def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, average = 15, noCells = 10000, folder = "Input_data_RaCInG", remove_direction = True):
+
+def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, average=15, noCells=10000, input_dir="Input_data_RaCInG", remove_direction=True, output_dir=""):
     """
     Generates a .csv file with normalised entries based on a raw .txt file.
     Only to be used for graphlets consisting of three vertices.
@@ -149,38 +154,46 @@ def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, aver
         The dataframe that also has been saved as .csv file.
 
     """
-    
-    #Generate input-data
-    CellLig,CellRec,Dtypes,Dconn,celltypes,lig,rec,signs = gi(weight_type, cancer_type, folder = folder)
+
+    # Generate input-data
+    CellLig, CellRec, Dtypes, Dconn, celltypes, lig, rec, signs = gi(
+        weight_type, cancer_type, folder_dir=input_dir)
     celltypes[celltypes == "CD8+ T"] = "CD8"
 
     if remove_direction:
-        for index, triangle_type in enumerate(triangle_types): #It is possible to accumulate multiple types by letting triangle types be a list
-            #Reading in normalised and non-normalised data
-            threetype,av,std,summary,weight,_,cellNo,itNo,avdeg = Triangle_Prop_Read("{}_{}_{}.out".format(cancer_type, triangle_type, average))
-            threetype,avN,stdN,summaryN,weight,_,cellNo,itNo,avdeg = Triangle_Prop_Read("{}_{}_{}_norm.out".format(cancer_type, triangle_type, average))
+        # It is possible to accumulate multiple types by letting triangle types be a list
+        for index, triangle_type in enumerate(triangle_types):
+            # Reading in normalised and non-normalised data
+            threetype, av, std, summary, weight, _, cellNo, itNo, avdeg = Triangle_Prop_Read(
+                "{}/{}_{}_{}.out".format(output_dir, cancer_type, triangle_type, average))
+            threetype, avN, stdN, summaryN, weight, _, cellNo, itNo, avdeg = Triangle_Prop_Read(
+                "{}/{}_{}_{}_norm.out".format(output_dir, cancer_type, triangle_type, average))
             non_unif_data = {}
             column_names = []
             for i in range(9):
                 for j in range(9):
                     for k in range(9):
-                        non_unif_data["{}_{}_{}".format(celltypes[i], celltypes[j], celltypes[k])] = av[i,j,k,:]
-                        column_names.append("{}_{}_{}".format(celltypes[i], celltypes[j], celltypes[k]))
-            df = pd.DataFrame(data = non_unif_data)
-            
+                        non_unif_data["{}_{}_{}".format(
+                            celltypes[i], celltypes[j], celltypes[k])] = av[i, j, k, :]
+                        column_names.append("{}_{}_{}".format(
+                            celltypes[i], celltypes[j], celltypes[k]))
+            df = pd.DataFrame(data=non_unif_data)
+
             unif_data = {}
             column_names = []
             for i in range(9):
                 for j in range(9):
                     for k in range(9):
-                        unif_data["{}_{}_{}".format(celltypes[i], celltypes[j], celltypes[k])] = avN[i,j,k,:]
-                        column_names.append("{}_{}_{}".format(celltypes[i], celltypes[j], celltypes[k]))
-            dfN = pd.DataFrame(data = unif_data)
-            
+                        unif_data["{}_{}_{}".format(
+                            celltypes[i], celltypes[j], celltypes[k])] = avN[i, j, k, :]
+                        column_names.append("{}_{}_{}".format(
+                            celltypes[i], celltypes[j], celltypes[k]))
+            dfN = pd.DataFrame(data=unif_data)
+
             if index == 0:
-                new = pd.DataFrame(index = df.index)
-                newN = pd.DataFrame(index = dfN.index)
-            
+                new = pd.DataFrame(index=df.index)
+                newN = pd.DataFrame(index=dfN.index)
+
             if triangle_type == "W":
                 for col in df.columns:
                     label_elements = col.split('_')
@@ -191,7 +204,7 @@ def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, aver
                         new_label = '_'.join(label_elements)
                     else:
                         new_label = col
-                    
+
                     try:
                         new[new_label] += df[col]
                         newN[new_label] += dfN[col]
@@ -201,96 +214,97 @@ def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, aver
             else:
                 for col in df.columns:
                     new_label = '_'.join(np.sort(col.split('_')))
-                    
+
                     try:
                         new[new_label] += df[col]
                         newN[new_label] += dfN[col]
                     except:
                         new[new_label] = df[col]
                         newN[new_label] = dfN[col]
-        
+
         if len(triangle_types) > 1:
             triangle_types = "Tr"
 
-        
-        #Normalising
+        # Normalising
         av = new.values
         avN = newN.values
-        #Find the places where both normalised and non-normalised data has a zero
+        # Find the places where both normalised and non-normalised data has a zero
         zero = np.ravel_multi_index(np.nonzero(av == 0), np.shape(av))
         zeroN = np.ravel_multi_index(np.nonzero(avN == 0), np.shape(avN))
         intersec = np.intersect1d(zero, zeroN)
         indices_intersec = np.unravel_index(intersec, np.shape(av))
 
-        
-        #Set both arrays at these places to 1
+        # Set both arrays at these places to 1
         av[indices_intersec] = 1
         avN[indices_intersec] = 1
-        #If there was no connection in avN, there now is one
-        #Assumption: each connection will appear once at least per network
+        # If there was no connection in avN, there now is one
+        # Assumption: each connection will appear once at least per network
         avN[avN == 0] = 1
-        #Normalising
+        # Normalising
         Norm = av/avN
-        #Delete patients where either norm or normal sim decided to stop
-        delete_indices = np.unique(np.concatenate((np.nonzero(summary[:,0] == 0)[0], np.nonzero(summaryN[:,0] == 0)[0])))
-        print("These patients went wrong for non-normalised: {}".format(np.nonzero(summary[:,0] == 0)))
-        print("These patients went wrong for normalised: {}".format(np.nonzero(summaryN[:,0] == 0)))
-        Norm = np.delete(Norm, delete_indices, axis = 0)
-        patients = np.delete(pn(cancer_type, folder = folder), delete_indices)
-        
-        df = pd.DataFrame(data = Norm, columns = new.columns, index = patients)
-        df.to_csv("{}_{}_{}_cells_{}_deg_data_bundle.csv".format(cancer_type, triangle_types, noCells, average))
-        return df
-    
-    
-            
-    #Reading in normalised and non-normalised data
-    threetype,av,std,summary,weight,cellNo,itNo,avdeg = Triangle_Prop_Read("{}_{}_{}.out".format(cancer_type, triangle_types, average))
-    threetype,avN,stdN,summaryN,weight,cellNo,itNo,avdeg = Triangle_Prop_Read("{}_{}_{}_norm.out".format(cancer_type, triangle_types, average))
+        # Delete patients where either norm or normal sim decided to stop
+        delete_indices = np.unique(np.concatenate(
+            (np.nonzero(summary[:, 0] == 0)[0], np.nonzero(summaryN[:, 0] == 0)[0])))
+        print(
+            "These patients went wrong for non-normalised: {}".format(np.nonzero(summary[:, 0] == 0)))
+        print("These patients went wrong for normalised: {}".format(
+            np.nonzero(summaryN[:, 0] == 0)))
+        Norm = np.delete(Norm, delete_indices, axis=0)
+        patients = np.delete(pn(cancer_type, folder=input_dir), delete_indices)
 
-    #Normalising
-    #Find the places where both normalised and non-normalised data has a zero
+        df = pd.DataFrame(data=Norm, columns=new.columns, index=patients)
+        df.to_csv(f"{output_dir}/{cancer_type}_{triangle_types}_{noCells}_cells_{average}_deg_data_bundle.csv")
+        return df
+
+    # Reading in normalised and non-normalised data
+    threetype, av, std, summary, weight, cellNo, itNo, avdeg = Triangle_Prop_Read(
+        "{}/{}_{}_{}.out".format(output_dir, cancer_type, triangle_types, average))
+    threetype, avN, stdN, summaryN, weight, cellNo, itNo, avdeg = Triangle_Prop_Read(
+        "{}/{}_{}_{}_norm.out".format(output_dir, cancer_type, triangle_types, average))
+
+    # Normalising
+    # Find the places where both normalised and non-normalised data has a zero
     zero = np.ravel_multi_index(np.nonzero(av == 0), np.shape(av))
     zeroN = np.ravel_multi_index(np.nonzero(avN == 0), np.shape(avN))
     intersec = np.intersect1d(zero, zeroN)
     indices_intersec = np.unravel_index(intersec, np.shape(av))
 
-    
-    #Set both arrays at these places to 1
+    # Set both arrays at these places to 1
     av[indices_intersec] = 1
     avN[indices_intersec] = 1
-    #If there was no connection in avN, there now is one
-    #Assumption: each connection will appear once at least per network
+    # If there was no connection in avN, there now is one
+    # Assumption: each connection will appear once at least per network
     avN[avN == 0] = 1
-    #Normalising
+    # Normalising
     Norm = av/avN
-    
-    delete_indices = np.unique(np.concatenate((np.nonzero(summary[:,0] == 0)[0], np.nonzero(summaryN[:,0] == 0)[0])))
-    print("These patients went wrong for non-normalised: {}".format(np.nonzero(summary[:,0] == 0)))
-    print("These patients went wrong for normalised: {}".format(np.nonzero(summaryN[:,0] == 0)))
-    Norm = np.delete(Norm, delete_indices, axis = 3)
-    patients = np.delete(pn(cancer_type, folder = folder), delete_indices)
-    
 
-    
-    #Putting Norm data in dataframe
+    delete_indices = np.unique(np.concatenate(
+        (np.nonzero(summary[:, 0] == 0)[0], np.nonzero(summaryN[:, 0] == 0)[0])))
+    print(
+        "These patients went wrong for non-normalised: {}".format(np.nonzero(summary[:, 0] == 0)))
+    print("These patients went wrong for normalised: {}".format(
+        np.nonzero(summaryN[:, 0] == 0)))
+    Norm = np.delete(Norm, delete_indices, axis=3)
+    patients = np.delete(pn(cancer_type, folder=output_dir), delete_indices)
+
+    # Putting Norm data in dataframe
     Normdata = {}
     column_names = []
     for i in range(9):
         for j in range(9):
             for k in range(9):
-                Normdata["{}_{}_{}".format(celltypes[i], celltypes[j], celltypes[k])] = Norm[i,j,k,:]
-                column_names.append("{}_{}_{}".format(celltypes[i], celltypes[j], celltypes[k]))
-    df = pd.DataFrame(data = Normdata)
-    
+                Normdata["{}_{}_{}".format(
+                    celltypes[i], celltypes[j], celltypes[k])] = Norm[i, j, k, :]
+                column_names.append("{}_{}_{}".format(
+                    celltypes[i], celltypes[j], celltypes[k]))
+    df = pd.DataFrame(data=Normdata)
 
     df.index = patients
-    
-    df.to_csv("{}_{}_{}_cells_{}_deg_data.csv".format(cancer_type, triangle_type, noCells, average))
-    
+    df.to_csv(f"{output_dir}/{cancer_type}_{triangle_types}_{noCells}_cells_{average}_deg_data.csv")
     return df
 
-def Generate_direct_communication_csv(cancer_type, weight_type, folder = "Input_data_RaCInG", remove_direction = True):
+
+def Generate_direct_communication_csv(cancer_type, weight_type, folder="Input_data_RaCInG", remove_direction=True):
     """
     Generates the .csv file corresponding to the raw data of (exact) direct
     communication.
@@ -309,83 +323,86 @@ def Generate_direct_communication_csv(cancer_type, weight_type, folder = "Input_
     df : Pandas data frame
         Data frame that has also been saves as .csv file.
     """
-    CellLig,CellRec,Dtypes,Dconn,celltypes,lig,rec,signs = gi(weight_type, cancer_type, folder = folder)
+    CellLig, CellRec, Dtypes, Dconn, celltypes, lig, rec, signs = gi(
+        weight_type, cancer_type, folder=folder)
     celltypes[celltypes == "CD8+ T"] = "CD8"
-    
+
     _, _, _, comm = Direct_Comm_Limit_Read(r"{}_D.out".format(cancer_type))
-    _, _, Pat, commN = Direct_Comm_Limit_Read(r"{}_D_norm.out".format(cancer_type))
-    
-    
-    if np.any(np.sum(comm, axis = (0,1)) < 0.99):
+    _, _, Pat, commN = Direct_Comm_Limit_Read(
+        r"{}_D_norm.out".format(cancer_type))
+
+    if np.any(np.sum(comm, axis=(0, 1)) < 0.99):
         print("Something is wrong")
-        print(np.sum(comm, axis = (0,1)))
-    
-    
+        print(np.sum(comm, axis=(0, 1)))
+
     if remove_direction:
         non_unif_data = {}
         column_names = []
         for i in range(9):
             for j in range(9):
-                    non_unif_data["{}_{}".format(celltypes[i], celltypes[j])] = comm[i,j,:]
-                    column_names.append("{}_{}".format(celltypes[i], celltypes[j]))
-        df = pd.DataFrame(data = non_unif_data)
-        
+                non_unif_data["{}_{}".format(
+                    celltypes[i], celltypes[j])] = comm[i, j, :]
+                column_names.append("{}_{}".format(celltypes[i], celltypes[j]))
+        df = pd.DataFrame(data=non_unif_data)
+
         unif_data = {}
         column_names = []
         for i in range(9):
             for j in range(9):
                 for k in range(9):
-                    unif_data["{}_{}".format(celltypes[i], celltypes[j])] = commN[i,j,:]
-                    column_names.append("{}_{}".format(celltypes[i], celltypes[j]))
-        dfN = pd.DataFrame(data = unif_data)
-        
-        new = pd.DataFrame(index = df.index)
-        newN = pd.DataFrame(index = dfN.index)
-        
+                    unif_data["{}_{}".format(
+                        celltypes[i], celltypes[j])] = commN[i, j, :]
+                    column_names.append("{}_{}".format(
+                        celltypes[i], celltypes[j]))
+        dfN = pd.DataFrame(data=unif_data)
+
+        new = pd.DataFrame(index=df.index)
+        newN = pd.DataFrame(index=dfN.index)
+
         for col in df.columns:
             new_label = '_'.join(np.sort(col.split('_')))
-            
+
             try:
                 new[new_label] += df[col]
                 newN[new_label] += dfN[col]
             except:
                 new[new_label] = df[col]
                 newN[new_label] = dfN[col]
-                
+
         comm = new.values
         commN = newN.values
-        
-        #Since we are working with limiting values, a zero at one is a zero at the
-        #other. Their ratio should be one.
+
+        # Since we are working with limiting values, a zero at one is a zero at the
+        # other. Their ratio should be one.
         comm[comm == 0] = 1
         commN[commN == 0] = 1
         Norm = comm/commN
-        patients = pn(cancer_type, folder = folder)
-        
-        df = pd.DataFrame(data = Norm, index = patients, columns = new.columns)
-        df.to_csv("{}_{}_weight_direct_communication_bundle.csv".format(cancer_type, weight_type))
+        patients = pn(cancer_type, folder=folder)
+
+        df = pd.DataFrame(data=Norm, index=patients, columns=new.columns)
+        df.to_csv("{}_{}_weight_direct_communication_bundle.csv".format(
+            cancer_type, weight_type))
         return df
-        
-    
-    #Since we are working with limiting values, a zero at one is a zero at the
-    #other. Their ratio should be one.
+
+    # Since we are working with limiting values, a zero at one is a zero at the
+    # other. Their ratio should be one.
     comm[comm == 0] = 1
     commN[commN == 0] = 1
     Norm = comm/commN
-    patients = pn(cancer_type, folder = folder)
-    
+    patients = pn(cancer_type, folder=folder)
 
     Normdata = {}
     column_names = []
     for i in range(9):
         for j in range(9):
-            Normdata["{}_{}".format(celltypes[i], celltypes[j])] = Norm[i, j, :]
+            Normdata["{}_{}".format(
+                celltypes[i], celltypes[j])] = Norm[i, j, :]
             column_names.append("{}_{}".format(celltypes[i], celltypes[j]))
-            
-    df = pd.DataFrame(data = Normdata)
-    df.index = patients
-    
-    df.to_csv("{}_{}_weight_direct_communication.csv".format(cancer_type, weight_type))
-    
-    return df
 
+    df = pd.DataFrame(data=Normdata)
+    df.index = patients
+
+    df.to_csv("{}_{}_weight_direct_communication.csv".format(
+        cancer_type, weight_type))
+
+    return df
