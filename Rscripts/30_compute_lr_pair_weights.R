@@ -16,19 +16,26 @@ devtools::load_all("./", export_all = FALSE)
 if (!interactive()) {
     # Define input arguments when running from bash
     parser <- setup_default_argparser(
-        description = "Get metadata",
+        description = "Compute LR pair weights",
     )
     parser$add_argument("-i", "--input_file",
         type = "character",
         default = NULL, help = "Path to Seurat object"
     )
-    args <- parser$parse_args()
+    parser$add_argument("-t", "--ccc_table_path",
+        type = "character",
+        default = NULL, help = "Path to curated cell-cell communication table"
+    )
+    parser$add_argument("-c", "--cancer_type",
+        type = "character",
+        default = NULL, help = "Cancer type"
+    )
 } else {
     # Provide arguments here for local runs
     args <- list()
     args$log_level <- 5
     args$output_dir <- glue("{here::here()}/output/30_compute_lr_pair_weights")
-    args$input_file <- glue("{here::here()}/output/BLCA_tpm.rds")
+    args$input_file <- glue("{here::here()}/output/10_preprocessing/GBM_tpm.rds")
     args$ccc_table_path <- glue("{here::here()}/Data/expressed_ccc_table.csv")
     args$cancer_type <- "GBM"
 }

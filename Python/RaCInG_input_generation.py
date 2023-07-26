@@ -350,7 +350,7 @@ def Read_Lig_Rec_Interaction(filename):
     return np.array(sign_matrix, dtype=int), ligand_names, receptor_names
 
 
-def generateInput(weight_type, cancer_name, read_signs=False, folder_dir=""):
+def generateInput(weight_type, cancer_name, read_signs=False, cellfrac_path="", lr_pairs_dir="", lr_weights_dir=""):
     """
     Read in all input data for model 1 from the provided .csv files.
 
@@ -395,27 +395,27 @@ def generateInput(weight_type, cancer_name, read_signs=False, folder_dir=""):
         Matrix with the interaction sign of ligand i with receptor j.
     """
 
-    current_path = pathlib.Path(__file__).parent.resolve()
+    # current_path = pathlib.Path(__file__).parent.resolve()
 
-    if (folder_dir == ""):
-        folder_dir = os.path.join(current_path, r"input_data_RaCInG")
+    # if (folder_dir == ""):
+    #     folder_dir = os.path.join(current_path, r"input_data_RaCInG")
 
     CellLigList, ligands, celltypes = createCellLigList(os.path.join(
-        folder_dir, r"celltype_ligand.csv"))
+        lr_pairs_dir, r"celltype_ligand.csv"))
 
     CellRecList, receptors, _ = createCellRecList(os.path.join(
-        folder_dir, r"celltype_receptor.csv"))
+        lr_pairs_dir, r"celltype_receptor.csv"))
 
     Dtypes, _, _ = createCellTypeDistr(celltypes, os.path.join(
-        folder_dir, r"{}_TMEmod_cell_fractions.csv".format(cancer_name)))
+        cellfrac_path, r"{}_TMEmod_cell_fractions.csv".format(cancer_name)))
 
     DconnectionTensor = createInteractionDistr(os.path.join(
-                                               folder_dir, r"{}_LRpairs_weights_{}.csv".format(cancer_name, weight_type)),
+                                               lr_weights_dir, r"{}_LRpairs_weights_{}.csv".format(cancer_name, weight_type)),
                                                ligands, receptors)
 
     if read_signs:
         Sign_matrix, _, _ = Read_Lig_Rec_Interaction(os.path.join(
-            folder_dir, r"{}_LRpairs_sign_interaction.csv".formal(cancer_name)))
+            lr_weights_dir, r"{}_LRpairs_sign_interaction.csv".formal(cancer_name)))
     else:
         Sign_matrix = np.zeros_like(DconnectionTensor[:, :, 0])
 
