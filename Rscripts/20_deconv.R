@@ -1,53 +1,51 @@
-if (!require("pacman")) install.packages("pacman")
-
 # Unload all previously loaded packages + remove previous environment
 rm(list = ls(all = TRUE))
 pacman::p_unload()
 
+# Set working directory
+cmd_args <- commandArgs(trailingOnly = FALSE)
+has_script_filepath <- startsWith(cmd_args, "--file=")
+if (sum(has_script_filepath)) {
+    setwd(dirname(unlist(strsplit(cmd_args[has_script_filepath], "=")))[2])
+}
+
 # Load libraries
-pacman::p_load(argparse, glue, data.table, tidyverse, stringr)
+pacman::p_load(glue, data.table, tidyverse, stringr)
+devtools::load_all("./", export_all = FALSE)
 
-# Parse user input
-parser <- ArgumentParser(description = "Deconvolution of cell types")
-parser$add_argument("-ll", "--log_level",
-    type = "integer",
-    default = "4", help = "Log level: 1=FATAL, 2=ERROR, 3=WARN, 4=INFO, 5=DEBUG"
-)
-parser$add_argument("-o", "--output_dir",
-    type = "character",
-    default = NULL, help = "Directory to save output"
-)
-
-args <- parser$parse_args()
-
-if (interactive()) {
-    # 	Provide arguments here for local runs
-    print("Running interactively...")
+if (!interactive()) {
+    # Define input arguments when running from bash
+    parser <- setup_default_argparser(
+        description = "Compute cell type abundances",
+    )
+    parser$add_argument("-i", "--input_file",
+        type = "character",
+        default = NULL, help = "Path to Seurat object"
+    )
+    parser$add_argument("-c", "--cancer_type", type = "character", default = NULL, help = "Cancer type")
+    args <- parser$parse_args()
+} else {
+    # Provide arguments here for local runs
     args <- list()
     args$log_level <- 5
     args$output_dir <- glue("{here::here()}/output/20_deconv")
-    args$input_file <- glue("{here::here()}/output/BLCA_tpm.rds")
-    args$cancer_type <- "BLCA"
-} else {
-    # 	Set temporary working directory based on path of script
-    print("Running from command line/terminal...")
-    setwd(dirname(str_split(commandArgs(trailingOnly = FALSE)
-    [grep("--file=", commandArgs(trailingOnly = FALSE))], "=", simplify = TRUE)[2]))
+    args$input_file <- glue("{here::here()}/output/10_preprocessing/GBM_tpm.rds")
+    args$cancer_type <- "GBM"
 }
-pacman::p_load(here)
-# Set final working directory
-setwd(here::here())
-# Load standard user-defined functions
-source(glue("{here::here()}/R/utils/utils.R"))
-source(glue("{here::here()}/R/utils/run_TMEmod_deconvolution.R"))
+
 # Set up logging
 logr <- init_logging(log_level = args$log_level)
+log_info(ifelse(interactive(),
+    "Running interactively...",
+    "Running from command line/terminal..."
+))
 
-# Load additional libraries (use pacman::p_load() or pacman::p_load_gh() to load
-# libraries)
+log_info("Create output directory...")
+create_dir(args$output_dir)
+
+# Load additional libraries
 pacman::p_load(parallel)
 pacman::p_load_gh("omnideconv/immunedeconv")
-# plan(multisession)
 
 # ---- Constants ----
 quantiseq_oi <- c("T.cells.CD8", "B.cells", "Tregs", "Macrophages.M1", "Macrophages.M2", "Dendritic.cells")
@@ -60,29 +58,29 @@ timer_oi <- c("DC")
 
 # Read RNA-seq data
 RNA_tpm_df <- readRDS(args$input_file)
-RNA_tpm <- data.matrix(RNA_tpm_df %>% select(-symbol))
-rownames(RNA_tpm) <- RNA_tpm_df$symbol
+RNA_tpm <- data.matrix(RNA_tpm_df)
 
 # ---- Compute cell abundances ----
 log_info("Compute cell abundances using")
 
-
+log_info("Quantiseq...")
 cellfrac_quantiseq <- immunedeconv::deconvolute_quantiseq(RNA_tpm,
     tumor = TRUE,
     arrays = FALSE,
     scale_mrna = TRUE
 )
+log_info("MCP-counter...")
 cellfrac_mcpcounter <- immunedeconv::deconvolute_mcp_counter(RNA_tpm,
     feature_types = "HUGO_symbols"
 )
-
+log_info("xCell...")
 cellfrac_xcell <- immunedeconv::deconvolute_xcell(RNA_tpm, arrays = FALSE)
-
+log_info("EPIC...")
 cellfrac_epic <- immunedeconv::deconvolute_epic(RNA_tpm,
     tumor = TRUE,
     scale_mrna = TRUE
 )
-
+log_info("TIMER...")
 cellfrac_timer <- immunedeconv::deconvolute_timer(RNA_tpm,
     indications = rep(args$cancer_type, ncol(RNA_tpm))
 )

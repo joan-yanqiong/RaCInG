@@ -1,56 +1,49 @@
-if (!require("pacman")) install.packages("pacman")
-
 # Unload all previously loaded packages + remove previous environment
 rm(list = ls(all = TRUE))
 pacman::p_unload()
 
+# Set working directory
+cmd_args <- commandArgs(trailingOnly = FALSE)
+has_script_filepath <- startsWith(cmd_args, "--file=")
+if (sum(has_script_filepath)) {
+    setwd(dirname(unlist(strsplit(cmd_args[has_script_filepath], "=")))[2])
+}
+
 # Load libraries
-pacman::p_load(argparse, glue, data.table, tidyverse, stringr)
+pacman::p_load(glue, data.table, tidyverse, stringr)
+devtools::load_all("./", export_all = FALSE)
 
-# Parse user input
-parser <- ArgumentParser(description = "Pre-processing")
-parser$add_argument("-ll", "--log_level",
-    type = "integer",
-    default = "4", help = "Log level: 1=FATAL, 2=ERROR, 3=WARN, 4=INFO, 5=DEBUG"
-)
-parser$add_argument("-o", "--output_dir",
-    type = "character",
-    default = NULL, help = "Directory to save output"
-)
-
-parser$add_argument("-i", "--input_file",
-    type = "character",
-    default = NULL, help = "Input file (txt)"
-)
-
-args <- parser$parse_args()
-
-if (interactive()) {
-    # 	Provide arguments here for local runs
-    print("Running interactively...")
+if (!interactive()) {
+    # Define input arguments when running from bash
+    parser <- setup_default_argparser(
+        description = "Get metadata",
+    )
+    parser$add_argument("-i", "--input_file",
+        type = "character",
+        default = NULL, help = "Input file (txt)"
+    )
+    args <- parser$parse_args()
+} else {
+    # Provide arguments here for local runs
     args <- list()
     args$log_level <- 5
     args$output_dir <- glue("{here::here()}/output/10_preprocessing")
-    args$input_file <- glue("{here::here()}/Data/BLCA_rnaseq.txt")
-    args$cancer_type <- "BLCA"
-} else {
-    # 	Set temporary working directory based on path of script
-    print("Running from command line/terminal...")
-    setwd(dirname(str_split(commandArgs(trailingOnly = FALSE)
-    [grep("--file=", commandArgs(trailingOnly = FALSE))], "=", simplify = TRUE)[2]))
+    args$input_file <- glue("{here::here()}/Data/GBM/GBM_rnaseqv2_counts.txt")
+    args$cancer_type <- "GBM"
 }
-pacman::p_load(here)
-# Set final working directory
-setwd(here::here())
-# Load standard user-defined functions
-source(glue("{here::here()}/R/utils/utils.R"))
+
 # Set up logging
 logr <- init_logging(log_level = args$log_level)
+log_info(ifelse(interactive(),
+    "Running interactively...",
+    "Running from command line/terminal..."
+))
 
-# Load additional libraries (use pacman::p_load() or pacman::p_load_gh() to load
-# libraries)
+log_info("Create output directory...")
+create_dir(args$output_dir)
+
+# Load additional libraries
 pacman::p_load_gh("maialab/hgnc")
-source(glue("{here::here()}/R/utils/preprocessing.R"))
 
 # ---- Initialisation ----
 create_dir(args$output_dir)

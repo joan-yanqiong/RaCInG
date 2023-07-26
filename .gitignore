@@ -1,6 +1,5 @@
 /Data
 /omnipathr-log
 /output
-__pycache__
-.DS_Store
-DEV_*
+**.DS_Store
+**Example input
