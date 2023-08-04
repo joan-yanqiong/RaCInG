@@ -8,6 +8,7 @@ import csv
 from RaCInG_input_generation import generateInput as gi
 from RaCInG_input_generation import get_patient_names as pn
 import pandas as pd
+import sys
 
 
 def Triangle_Prop_Read(filename):
@@ -128,7 +129,7 @@ def Direct_Comm_Limit_Read(filename):
     return weight, cancer, int(NoPat), direct_comm
 
 
-def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, average=15, noCells=10000, input_dir="Input_data_RaCInG", remove_direction=True, output_dir=""):
+def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, average=15, noCells=10000, cellfrac_path="", lr_pairs_dir="", lr_weights_dir="", remove_direction=True, output_dir="", input_norm_dir="", input_dir=""):
     """
     Generates a .csv file with normalised entries based on a raw .txt file.
     Only to be used for graphlets consisting of three vertices.
@@ -157,7 +158,7 @@ def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, aver
 
     # Generate input-data
     CellLig, CellRec, Dtypes, Dconn, celltypes, lig, rec, signs = gi(
-        weight_type, cancer_type, folder_dir=input_dir)
+        weight_type, cancer_type, cellfrac_path=cellfrac_path, lr_pairs_dir=lr_pairs_dir, lr_weights_dir=lr_weights_dir)
     celltypes[celltypes == "CD8+ T"] = "CD8"
 
     if remove_direction:
@@ -250,10 +251,12 @@ def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, aver
         print("These patients went wrong for normalised: {}".format(
             np.nonzero(summaryN[:, 0] == 0)))
         Norm = np.delete(Norm, delete_indices, axis=0)
-        patients = np.delete(pn(cancer_type, folder=input_dir), delete_indices)
+        patients = np.delete(
+            pn(cancer_type, folder=output_dir), delete_indices)
 
         df = pd.DataFrame(data=Norm, columns=new.columns, index=patients)
-        df.to_csv(f"{output_dir}/{cancer_type}_{triangle_types}_{noCells}_cells_{average}_deg_data_bundle.csv")
+        df.to_csv(
+            f"{output_dir}/{cancer_type}_{triangle_types}_{noCells}_cells_{average}_deg_data_bundle.csv")
         return df
 
     # Reading in normalised and non-normalised data
@@ -300,7 +303,8 @@ def Generate_normalised_count_csv(cancer_type, weight_type, triangle_types, aver
     df = pd.DataFrame(data=Normdata)
 
     df.index = patients
-    df.to_csv(f"{output_dir}/{cancer_type}_{triangle_types}_{noCells}_cells_{average}_deg_data.csv")
+    df.to_csv(
+        f"{output_dir}/{cancer_type}_{triangle_types}_{noCells}_cells_{average}_deg_data.csv")
     return df
 
 

@@ -468,7 +468,8 @@ def combinePatients(input_dir, cancer_type, communication_type, av, norm, output
             f.write(line)
         # Add patient files
         for patient_file in patient_files:
-            patient_file = open(os.path.join(input_dir, patient_file), "r")
+            patient_file = open(os.path.join(
+                input_dir, patient_file), "r", errors='ignore')
             for line in patient_file.readlines():
                 f.write(line)
         f.write("\n")

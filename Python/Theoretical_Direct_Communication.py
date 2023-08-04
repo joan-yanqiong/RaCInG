@@ -10,15 +10,16 @@ import pandas as pd
 from RaCInG_input_generation import generateInput
 from RaCInG_input_generation import get_patient_names
 
-def Calculate_expected_communication_probabilities(liglist, reclist, Dcell, Dconn, normalize = False):
+
+def Calculate_expected_communication_probabilities(liglist, reclist, Dcell, Dconn, normalize=False):
     """
     Computes the exact direct communication probabilities between
     cell types given mRNA input data of model 1 for all patients. Precicely,
     if N(a,b) is the number of arcs between cell type a and b, then this method
     computes:
-        
+
         \lim_{n \to \infty} N(a, b)/n.
-        
+
     This quantity is equal to \kappa(a, b) q_a q_b, where q_a and q_b are the
     cell type quantifications and \kappa(a, b) is the kernel of the associated
     inhomogeneous random digraph.
@@ -35,9 +36,9 @@ def Calculate_expected_communication_probabilities(liglist, reclist, Dcell, Dcon
         The probabilities that a ligend of type i connecting to a receptor
         of type j appears in the network.
     normalize : bool; (Optional)
-        Indicator whether as input one wants to consider a uniform Dconn 
+        Indicator whether as input one wants to consider a uniform Dconn
         matrix (with the same support as the input Dconn).
-        
+
     Returns
     -------
     out : np.array() with float entries;
@@ -52,38 +53,38 @@ def Calculate_expected_communication_probabilities(liglist, reclist, Dcell, Dcon
         dim1 = len(Dcell)
         dim2 = 1
         Dcell = Dcell[None, :]
-        Dconn = Dconn[:,:,None]
-        
-    commexpec = np.zeros((dim1, dim1, dim2))
-    
-    #Changing liglist and reclist to an all 1 list to make sure everything can connect
-    if normalize:
-        normvec = 1 / np.count_nonzero(Dconn, axis = (0,1))
-        for i in range(Dconn.shape[2]):
-            copy = Dconn[:,:,i]
-            copy[copy > 0] = normvec[i]
-            Dconn[:,:,i] = copy
+        Dconn = Dconn[:, :, None]
 
-    
+    commexpec = np.zeros((dim1, dim1, dim2))
+
+    # Changing liglist and reclist to an all 1 list to make sure everything can connect
+    if normalize:
+        normvec = 1 / np.count_nonzero(Dconn, axis=(0, 1))
+        for i in range(Dconn.shape[2]):
+            copy = Dconn[:, :, i]
+            copy[copy > 0] = normvec[i]
+            Dconn[:, :, i] = copy
+
     for patient in range(dim2):
-        #print(patient)
-        for i, ligrow in enumerate(Dconn[:,:,patient]):
+        # print(patient)
+        for i, ligrow in enumerate(Dconn[:, :, patient]):
             for j, ligrec in enumerate(ligrow):
                 for k in range(dim1):
                     for l in range(dim1):
-                        weightlig = np.sum(Dcell[patient,:] * liglist[:,i])
-                        weightrec = np.sum(Dcell[patient, :] * reclist[:,j])
-                        
-                        #Add proportion of connections which will connect
-                        #cell type i to j according to limiting value
+                        weightlig = np.sum(Dcell[patient, :] * liglist[:, i])
+                        weightrec = np.sum(Dcell[patient, :] * reclist[:, j])
+
+                        # Add proportion of connections which will connect
+                        # cell type i to j according to limiting value
                         if weightlig != 0 and weightrec != 0:
-                            commexpec[k, l, patient] += ligrec * (Dcell[patient, k] * liglist[k,i] / weightlig) \
-                                * (Dcell[patient, l] * reclist[l,j] / weightrec)
-    
-    #Normalize to take care of "missing mass" (lig/rec that could not connect)
-    #and were dropped.
-    out = commexpec / np.sum(commexpec, axis = (0,1))
+                            commexpec[k, l, patient] += ligrec * (Dcell[patient, k] * liglist[k, i] / weightlig) \
+                                * (Dcell[patient, l] * reclist[l, j] / weightrec)
+
+    # Normalize to take care of "missing mass" (lig/rec that could not connect)
+    # and were dropped.
+    out = commexpec / np.sum(commexpec, axis=(0, 1))
     return out
+
 
 def Save_Direct_Communication(out, cellnames, filename):
     """
@@ -103,7 +104,7 @@ def Save_Direct_Communication(out, cellnames, filename):
     None. Creates a .npz file with the inputted results.
 
     """
-    np.savez_compressed(filename, names = cellnames, prob = out)
+    np.savez_compressed(filename, names=cellnames, prob=out)
     return
 
 
@@ -112,7 +113,7 @@ def Calculate_expected_communication_varying_cell(weighttype, cell, valrange, pa
     Computes direct communication probabilities over a range of cell fraction
     values of one cell type to gain insight into the influence of cell abundance
     on expression value.
-    
+
     NOTE: Not used in RaCInG.
 
     Parameters
@@ -134,42 +135,44 @@ def Calculate_expected_communication_varying_cell(weighttype, cell, valrange, pa
         The communication probabilities between cell types.
 
     """
-    
+
     liglist, reclist, Dcell, Dconn, cellnames, \
         ligands, receptors, _ = generateInput(weighttype)
-    
-    commexpec = np.zeros((len(cellnames),len(cellnames),len(valrange)))
-    
+
+    commexpec = np.zeros((len(cellnames), len(cellnames), len(valrange)))
+
     for index, val in enumerate(valrange):
         print(val)
-        #Changing the number of NK cells and ensuring the other fractions remain the same
+        # Changing the number of NK cells and ensuring the other fractions remain the same
         Dcell[patient, cellnames == cell] = val
-        Dcell[patient, cellnames != cell] = Dcell[patient, cellnames != cell]/np.sum(Dcell[patient, cellnames != cell]) * (1 - val)
-        for i, ligrow in enumerate(Dconn[:,:,patient]):
+        Dcell[patient, cellnames != cell] = Dcell[patient, cellnames !=
+                                                  cell]/np.sum(Dcell[patient, cellnames != cell]) * (1 - val)
+        for i, ligrow in enumerate(Dconn[:, :, patient]):
             for j, ligrec in enumerate(ligrow):
                 for k in range(len(cellnames)):
                     for l in range(len(cellnames)):
-                        weightlig = np.sum(Dcell[patient,:] * liglist[:,i])
-                        weightrec = np.sum(Dcell[patient, :] * reclist[:,j])
-                        
-                        #Add proportion of connections which will connect
-                        #cell type i to j according to limiting value
+                        weightlig = np.sum(Dcell[patient, :] * liglist[:, i])
+                        weightrec = np.sum(Dcell[patient, :] * reclist[:, j])
+
+                        # Add proportion of connections which will connect
+                        # cell type i to j according to limiting value
                         if weightlig != 0 and weightrec != 0:
-                            commexpec[k, l, index] += ligrec * (Dcell[patient, k] * liglist[k,i] / weightlig) \
-                                * (Dcell[patient, l] * reclist[l,j] / weightrec)
-    
-    #Normalize to take care of "missing mass" (lig/rec that could not connect)
-    #and were dropped.
-    out = commexpec / np.sum(commexpec, axis = (0,1))
-                                
-    np.savez_compressed("Limiting_Direct_Communication_Var_{}_cells_2.npz".format(cell),\
-                        names = cellnames, prob = out)
-    
+                            commexpec[k, l, index] += ligrec * (Dcell[patient, k] * liglist[k, i] / weightlig) \
+                                * (Dcell[patient, l] * reclist[l, j] / weightrec)
+
+    # Normalize to take care of "missing mass" (lig/rec that could not connect)
+    # and were dropped.
+    out = commexpec / np.sum(commexpec, axis=(0, 1))
+
+    np.savez_compressed("Limiting_Direct_Communication_Var_{}_cells_2.npz".format(cell),
+                        names=cellnames, prob=out)
+
     return cellnames, out
 
-def Calculate_kernel(liglist, reclist, Dcell, Dconn, normalize = False):
+
+def Calculate_kernel(liglist, reclist, Dcell, Dconn, normalize=False):
     """
-    Computes the kernel of the random graph model based on mRNA input 
+    Computes the kernel of the random graph model based on mRNA input
     data for all patients. This kernel forms the backbone of all computations
     done in the random grpah model.
 
@@ -185,9 +188,9 @@ def Calculate_kernel(liglist, reclist, Dcell, Dconn, normalize = False):
         The probabilities that a ligend of type i connecting to a receptor
         of type j appears in the network.
     normalize : bool; (Optional)
-        Indicator whether as input one wants to consider a uniform Dconn 
+        Indicator whether as input one wants to consider a uniform Dconn
         matrix (with the same support as the input Dconn).
-        
+
     Returns
     -------
     out : np.array() with float entries;
@@ -201,40 +204,40 @@ def Calculate_kernel(liglist, reclist, Dcell, Dconn, normalize = False):
         dim1 = len(Dcell)
         dim2 = 1
         Dcell = Dcell[None, :]
-        Dconn = Dconn[:,:,None]
-        
-    commexpec = np.zeros((dim1, dim1, dim2))
-    
-    #Changing liglist and reclist to an all 1 list to make sure everything can connect
-    if normalize:
-        normvec = 1 / np.count_nonzero(Dconn, axis = (0,1))
-        for i in range(Dconn.shape[2]):
-            copy = Dconn[:,:,i]
-            copy[copy > 0] = normvec[i]
-            Dconn[:,:,i] = copy
+        Dconn = Dconn[:, :, None]
 
-    
+    commexpec = np.zeros((dim1, dim1, dim2))
+
+    # Changing liglist and reclist to an all 1 list to make sure everything can connect
+    if normalize:
+        normvec = 1 / np.count_nonzero(Dconn, axis=(0, 1))
+        for i in range(Dconn.shape[2]):
+            copy = Dconn[:, :, i]
+            copy[copy > 0] = normvec[i]
+            Dconn[:, :, i] = copy
+
     for patient in range(dim2):
         print(patient)
-        for i, ligrow in enumerate(Dconn[:,:,patient]):
+        for i, ligrow in enumerate(Dconn[:, :, patient]):
             for j, ligrec in enumerate(ligrow):
                 for k in range(dim1):
                     for l in range(dim1):
-                        weightlig = np.sum(Dcell[patient,:] * liglist[:,i])
-                        weightrec = np.sum(Dcell[patient, :] * reclist[:,j])
-                        
-                        #Add proportion of connections which will connect
-                        #cell type i to j according to limiting value
+                        weightlig = np.sum(Dcell[patient, :] * liglist[:, i])
+                        weightrec = np.sum(Dcell[patient, :] * reclist[:, j])
+
+                        # Add proportion of connections which will connect
+                        # cell type i to j according to limiting value
                         if weightlig != 0 and weightrec != 0:
-                            commexpec[k, l, patient] += ligrec * (1 * liglist[k,i] / weightlig) \
-                                * (1 * reclist[l,j] / weightrec)
-    
-    #Normalize to take care of "missing mass" (lig/rec that could not connect)
-    #and were dropped.
+                            commexpec[k, l, patient] += ligrec * (1 * liglist[k, i] / weightlig) \
+                                * (1 * reclist[l, j] / weightrec)
+
+    # Normalize to take care of "missing mass" (lig/rec that could not connect)
+    # and were dropped.
     out = commexpec
     return out
 
-def calculateWedges(cancer, bundle = True):
+
+def calculateWedges(cancer, bundle=True):
     load = np.load("kernel_{}.npz".format(cancer))
     out = load["prob"]
     out[out == 0] = 1
@@ -244,35 +247,38 @@ def calculateWedges(cancer, bundle = True):
     outN = load2["prob"]
     outN[outN == 0] = 1
     names = get_patient_names(cancer)
-    
+
     unifData = {}
     columnNames = []
-    
+
     if bundle:
         for i, cell2 in enumerate(cells):
             for j, cell1 in enumerate(cells):
-                for k in np.arange(start = j, stop = len(cells)):
+                for k in np.arange(start=j, stop=len(cells)):
                     cell3 = cells[k]
-                    unifData["{}_{}_{}".format(cell1, cell2, cell3)] = (out[i, j, :] * out[j, k, :] + out[k, j, :] * out[j, i, :]) / (outN[i,j, :] * outN[j, k, :] + outN[k,j, :] * outN[j,i, :])
+                    unifData["{}_{}_{}".format(cell1, cell2, cell3)] = (
+                        out[i, j, :] * out[j, k, :] + out[k, j, :] * out[j, i, :]) / (outN[i, j, :] * outN[j, k, :] + outN[k, j, :] * outN[j, i, :])
                     columnNames.append("{}_{}_{}".format(cell1, cell2, cell3))
     else:
         for i, cell1 in enumerate(cells):
-            for j, cell2 in  enumerate(cells):
-                for k, cell3 in  enumerate(cells):
-                    unifData["{}_{}_{}".format(cell1, cell2, cell3)] = (out[i, j, :] * out[j, k, :] + out[k, j, :] * out[j, i, :]) / (outN[i,j, :] * outN[j, k, :] + outN[k,j, :] * outN[j,i, :])
+            for j, cell2 in enumerate(cells):
+                for k, cell3 in enumerate(cells):
+                    unifData["{}_{}_{}".format(cell1, cell2, cell3)] = (
+                        out[i, j, :] * out[j, k, :] + out[k, j, :] * out[j, i, :]) / (outN[i, j, :] * outN[j, k, :] + outN[k, j, :] * outN[j, i, :])
                     columnNames.append("{}_{}_{}".format(cell1, cell2, cell3))
-                
-    df = pd.DataFrame(data = unifData, columns = columnNames, index = names)
+
+    df = pd.DataFrame(data=unifData, columns=columnNames, index=names)
     df.to_csv("{}_min_weight_W_bundle.csv".format(cancer))
     return df
 
+
 if __name__ == "__main__":
     from RaCInG_input_generation import generateInput as gi
-    
-    a, b, c, d, e, _, _, _ = gi("min", "SKCM", folder = "Example Input")
-    out = Calculate_kernel(a,b,c[0,:],d[:,:,0], normalize=False)
-    #np.savez_compressed("kernel_STAD.npz", names = e, prob = out)
-    
+
+    a, b, c, d, e, _, _, _ = gi("min", "SKCM", folder="Example Input")
+    out = Calculate_kernel(a, b, c[0, :], d[:, :, 0], normalize=False)
+    # np.savez_compressed("kernel_STAD.npz", names = e, prob = out)
+
     '''
     #Small example to test the results
     Dcelltype = np.array([0.4, 0.3, 0.2, 0.1])

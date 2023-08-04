@@ -34,7 +34,7 @@ if (!interactive()) {
     # Provide arguments here for local runs
     args <- list()
     args$log_level <- 5
-    args$output_dir <- glue("{here::here()}/output/30_compute_lr_pair_weights")
+    args$output_dir <- glue("{here::here()}/output/GBM/30_compute_lr_pair_weights")
     args$input_file <- glue("{here::here()}/output/10_preprocessing/GBM_tpm.rds")
     args$ccc_table_path <- glue("{here::here()}/Data/expressed_ccc_table.csv")
     args$cancer_type <- "GBM"

@@ -395,11 +395,6 @@ def generateInput(weight_type, cancer_name, read_signs=False, cellfrac_path="", 
         Matrix with the interaction sign of ligand i with receptor j.
     """
 
-    # current_path = pathlib.Path(__file__).parent.resolve()
-
-    # if (folder_dir == ""):
-    #     folder_dir = os.path.join(current_path, r"input_data_RaCInG")
-
     CellLigList, ligands, celltypes = createCellLigList(os.path.join(
         lr_pairs_dir, r"celltype_ligand.csv"))
 
@@ -422,7 +417,7 @@ def generateInput(weight_type, cancer_name, read_signs=False, cellfrac_path="", 
     return CellLigList, CellRecList, Dtypes, DconnectionTensor, celltypes, ligands, receptors, Sign_matrix
 
 
-def get_patient_names(cancer_type, folder=r"input_data_RaCInG"):
+def get_patient_names(cancer_type, folder):
     """
     Gets the name tags of the patient in the input data.
 
@@ -440,14 +435,14 @@ def get_patient_names(cancer_type, folder=r"input_data_RaCInG"):
 
     current_path = pathlib.Path(__file__).parent.resolve()
 
-    _, _, celltypes = createCellLigList(os.path.join(current_path,
-                                                     folder, r"celltype_ligand.csv"))
-    _, _, names = createCellTypeDistr(celltypes, os.path.join(current_path,
-                                                              folder, r"{}_TMEmod_cell_fractions.csv".format(cancer_type)))
+    _, _, celltypes = createCellLigList(
+        os.path.join(folder, r"celltype_ligand.csv"))
+    _, _, names = createCellTypeDistr(celltypes, os.path.join(
+        folder, r"{}_TMEmod_cell_fractions.csv".format(cancer_type)))
     return names
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # Little script to test reading input
-    a, b, c, d, e, lig1, rec1, _ = generateInput("min", "NSCLC")
+    # a, b, c, d, e, lig1, rec1, _ = generateInput("min", "NSCLC")
     # names = get_patient_names("STAD")

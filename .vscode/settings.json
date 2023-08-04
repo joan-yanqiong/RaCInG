@@ -1,41 +1,36 @@
 {
-  "r.linting.enable": true,
-  "r.linting.lineLength": true,
-  "r.editor.bracesOnNewLine": true,
-  "r.bracketedPaste": true,
-  "r.rterm.mac": "/Users/joankant/miniforge-pypy3/envs/racingr/bin/radian",
-  "r.rpath.mac": "/Users/joankant/miniforge-pypy3/envs/racingr/bin/r",
-  "r.rterm.option": [
-    "--r-binary=/Users/joankant/miniforge-pypy3/envs/racingr/bin/r"
-  ],
-  "r.interpreterPath": "/Users/joankant/miniforge-pypy3/envs/racingr/bin/r",
-  "r.terminalPath": "/Users/joankant/miniforge-pypy3/envs/racingr/bin/r",
-  "r.alwaysUseActiveTerminal": true,
-
-  "[r]": {
-    "editor.defaultFormatter": "REditorSupport.r"
-  },
-
   "[python]": {
     "editor.defaultFormatter": "ms-python.autopep8"
   },
-  "python.formatting.provider": "none",
+  "[r]": {
+    "editor.defaultFormatter": "REditorSupport.r"
+  },
   "[shellscript]": {
     "editor.wordWrap": "off"
   },
-  "python.defaultInterpreterPath": "",
-  "python.terminal.activateEnvInCurrentTerminal": true,
-  "python.terminal.activateEnvironment": true,
-
-
-  "files.exclude": {
-    "**/._*": true
-  },
+  "cSpell.ignoreRegExpList": [
+    "*\\\\:\\\\:"
+  ],
+  "cSpell.patterns": [
+    "*\\:\\:",
+    "*\\:\\:\\:"
+  ],
+  "editor.defaultFormatter": "REditorSupport.r",
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "editor.formatOnType": false,
-  "r.editor.tabSize": 2
-
-
-
+  "files.exclude": {
+    "**/._*": true
+  },
+  "python.defaultInterpreterPath": "/Users/joankant/miniforge-pypy3/envs/racing/bin/python3",
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "python.terminal.activateEnvironment": true,
+  "r.alwaysUseActiveTerminal": true,
+  "r.bracketedPaste": true,
+  "r.rpath.mac": "/Users/joankant/miniforge-pypy3/envs/racingr/bin/r",
+  "r.rterm.mac": "/Users/joankant/miniforge-pypy3/envs/racingr/bin/radian",
+  "r.rterm.option": [
+    "--r-binary=/Users/joankant/miniforge-pypy3/envs/racingr/bin/r"
+  ],
+  "r.plot.useHttpgd": true,
 }

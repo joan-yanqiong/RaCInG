@@ -46,4 +46,4 @@ meta <- t(meta)
 rownames(meta) <- NULL
 meta <- meta[-c(1), ]
 meta <- data.frame(meta)
-hist_types <- unique(meta$histological_type)
+# hist_types <- unique(meta$histological_type)

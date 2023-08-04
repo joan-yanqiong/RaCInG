@@ -2,7 +2,8 @@ import execute_sim as exSim
 import argparse
 import logging
 
-parser = argparse.ArgumentParser(description="Combine simulations from different samples")
+parser = argparse.ArgumentParser(
+    description="Combine simulations from different samples")
 
 parser.add_argument("-f", "--input_dir", type=str, help="Path to input files")
 parser.add_argument("-o", "--output_dir", type=str,
@@ -23,4 +24,5 @@ if __name__ == "__main__":
     # Setup logging
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
 
-    exSim.combinePatients(input_dir = args.input_dir, cancer_type = args.cancer_type, communication_type = args.communication_type, norm = args.norm_dist, av = args.av, output_dir = args.output_dir)
+    exSim.combinePatients(input_dir=args.input_dir, cancer_type=args.cancer_type,
+                          communication_type=args.communication_type, norm=args.norm_dist, av=args.av, output_dir=args.output_dir)

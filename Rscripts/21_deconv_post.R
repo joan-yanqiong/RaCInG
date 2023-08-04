@@ -31,8 +31,8 @@ if (!interactive()) {
     # Provide arguments here for local runs
     args <- list()
     args$log_level <- 5
-    args$input_dir <- glue("{here::here()}/output/20_deconv")
-    args$output_dir <- glue("{here::here()}/output/21_deconv_post")
+    args$input_dir <- glue("{here::here()}/output/GBM/20_deconv")
+    args$output_dir <- glue("{here::here()}/output/GBM/21_deconv_post")
     args$cancer_type <- "GBM"
 }
 
@@ -89,8 +89,9 @@ cell_fractions["NK cells", ] <- ifelse(cellfrac_xcell["NK cells", ] == 0, 0,
 )
 
 # Re-scaling the data to sum to 1
-cell_fractions_norm <- cell_fractions
-cell_fractions_norm <- cell_fractions_norm / apply(cell_fractions, 1, sum)
+cell_fractions_norm <- apply(cell_fractions, 2, function(sample) {
+    return(sample / sum(sample))
+})
 
 cell_fractions_norm <- t(cell_fractions_norm)
 
